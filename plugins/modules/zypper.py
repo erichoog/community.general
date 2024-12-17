@@ -42,7 +42,7 @@ attributes:
 options:
     name:
         description:
-        - Package name V(name) or package specifier or a list of either.
+       - Package name V(name) or package specifier or a list of either.
         - Can include a version like V(name=1.0), V(name>3.4) or V(name<=2.7). If a version is given, V(oldpackage) is implied and zypper is allowed to
           update the package within the version range given.
         - You can also pass a url or a local path to a rpm file.
@@ -53,7 +53,7 @@ options:
         elements: str
     state:
         description:
-          - V(present) will make sure the package is installed.
+           - V(present) will make sure the package is installed.
             V(latest)  will make sure the latest version of the package is installed.
             V(absent)  will make sure the specified package is not installed.
             V(dist-upgrade) will make sure the latest version of all installed packages from all enabled repositories is installed.
@@ -144,6 +144,13 @@ options:
         description:
           - Adds C(--clean-deps) option to I(zypper) remove command.
         version_added: '4.6.0'
+    simple_errors:
+        type: bool
+        required: false
+        default: false
+        description:
+          - Provides a simplified error output (parses only the <message> tag text in the XML output)
+        version_added: '10.1.1'
 notes:
   - When used with a C(loop:) each package will be processed individually,
     it is much more efficient to pass the list directly to the O(name) option.
@@ -191,6 +198,12 @@ EXAMPLES = '''
   community.general.zypper:
     name: '*'
     state: latest
+
+- name: Install latest packages but dump error messages in a simplified format
+  community.general.zypper:
+    name: '*'
+    state: latest
+    simple_errors: true
 
 - name: Apply all available patches
   community.general.zypper:
@@ -350,7 +363,18 @@ def parse_zypper_xml(m, cmd, fail_not_found=True, packages=None):
             return parse_zypper_xml(m, cmd, fail_not_found=fail_not_found, packages=packages)
 
         return packages, rc, stdout, stderr
+
+    if m.params['simple_errors']:
+        stdout = get_simple_errors(dom)
+        
     m.fail_json(msg='Zypper run command failed with return code %s.' % rc, rc=rc, stdout=stdout, stderr=stderr, cmd=cmd)
+
+def get_simple_errors(dom):
+    simple_errors = []
+    message_xml_tags = dom.getElementsByTagName('message')
+    for x in message_xml_tags:
+        simple_errors.append(x.firstChild.data)
+    return " ".join(simple_errors)
 
 
 def get_cmd(m, subcommand):
@@ -557,6 +581,7 @@ def main():
             allow_vendor_change=dict(required=False, default=False, type='bool'),
             replacefiles=dict(required=False, default=False, type='bool'),
             clean_deps=dict(required=False, default=False, type='bool'),
+            simple_errors=dict(required=False, default=False, type='bool'),
         ),
         supports_check_mode=True
     )
@@ -588,7 +613,7 @@ def main():
         elif state in ['installed', 'present', 'latest']:
             packages_changed, retvals = package_present(module, name, state == 'latest')
 
-    retvals['changed'] = retvals['rc'] in [0, 102] and bool(packages_changed)
+        retvals['changed'] = retvals['rc'] in [0, 102] and bool(packages_changed)
 
     if module._diff:
         set_diff(module, retvals, packages_changed)

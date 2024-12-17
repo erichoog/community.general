@@ -42,7 +42,7 @@ attributes:
 options:
     name:
         description:
-       - Package name V(name) or package specifier or a list of either.
+        - Package name V(name) or package specifier or a list of either.
         - Can include a version like V(name=1.0), V(name>3.4) or V(name<=2.7). If a version is given, V(oldpackage) is implied and zypper is allowed to
           update the package within the version range given.
         - You can also pass a url or a local path to a rpm file.
@@ -53,7 +53,7 @@ options:
         elements: str
     state:
         description:
-           - V(present) will make sure the package is installed.
+          - V(present) will make sure the package is installed.
             V(latest)  will make sure the latest version of the package is installed.
             V(absent)  will make sure the specified package is not installed.
             V(dist-upgrade) will make sure the latest version of all installed packages from all enabled repositories is installed.
@@ -149,8 +149,8 @@ options:
         required: false
         default: false
         description:
-          - Provides a simplified error output (parses only the <message> tag text in the XML output)
-        version_added: '10.1.1'
+          - When set to V(true), provide a simplified error output (parses only the C(<message>) tag text in the XML output).
+        version_added: '10.2.0'
 notes:
   - When used with a C(loop:) each package will be processed individually,
     it is much more efficient to pass the list directly to the O(name) option.
